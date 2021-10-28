@@ -2,6 +2,7 @@ let geodata;
 let treeData;
 
 let currentYear;
+let record = false;
 
 let bounds = {
   left: 8.20782,
@@ -40,7 +41,7 @@ function setup() {
 
   currentYear = startYear;
 
-  frameRate(30);
+  frameRate(3);
 }
 
 function draw() {
@@ -51,6 +52,11 @@ function draw() {
   text(currentYear, 50, 50);
 
   drawTrees();
+
+  if (record) {
+    let fileName = "trees-" + nf(frameCount, 5);
+    saveCanvas(fileName, "png");
+  }
 
   currentYear += 0.5;
 }
