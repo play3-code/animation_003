@@ -1,7 +1,7 @@
 let geodata;
 let treeData;
 
-let startYear;
+let currentYear;
 
 let bounds = {
   left: 8.20782,
@@ -14,31 +14,31 @@ function preload() {
   geodata = loadJSON("lucerne-trees.json");
 }
 
-let currentYear;
-let record = false;
-
 function setup() {
   createCanvas(900, 650);
 
   treeData = geodata.features;
-  console.log(treeData[0]);
   console.log(treeData.length);
-  treeData = treeData.filter((d) => {
+
+  // filter out trees with no PFLANZJAHR
+  treeData = treeData.filter(function (d) {
     return d.properties.PFLANZJAHR != null;
   });
-
-  treeData = treeData.filter((d) => {
-    return d.properties.PFLANZJAHR > 1000;
-  });
   console.log(treeData.length);
 
-  startYear = d3.min(treeData, function (d) {
+  // filter out obviously invalid year data (12)
+  treeData = treeData.filter(function (d) {
+    return d.properties.PFLANZJAHR > 1000;
+  });
+
+  // get the start year for the animation, this is the earliest year in the data
+  let startYear = d3.min(treeData, function (d) {
     return d.properties.PFLANZJAHR;
   });
 
-  currentYear = startYear;
-
   console.log("startYear", startYear);
+
+  currentYear = startYear;
 
   frameRate(30);
 }
@@ -53,49 +53,31 @@ function draw() {
   drawTrees();
 
   currentYear += 0.5;
-
-  if (record) {
-    const timestamp = nf(frameCount, 5);
-    const filename = "trees-" + timestamp;
-    saveCanvas(filename, "png");
-  }
-}
-
-function keyTyped() {
-  saveCanvas("tree_background", "png");
 }
 
 function drawTrees() {
   for (let i = 0; i < treeData.length; i++) {
     let treeObject = treeData[i];
-    let geometry = treeObject.geometry;
-    let properties = treeObject.properties;
 
-    if (properties.PFLANZJAHR < currentYear) {
-      // console.log(properties);
-      let coordinates = geometry.coordinates;
+    if (treeObject.properties.PFLANZJAHR < currentYear) {
+      let coordinates = treeObject.geometry.coordinates;
       let lat = coordinates[1];
       let lon = coordinates[0];
 
       let x = map(lon, bounds.left, bounds.right, 0, width);
       let y = map(lat, bounds.top, bounds.bottom, 0, height);
 
-      let age = currentYear - properties.PFLANZJAHR;
-      let r = age * 2;
+      let age = currentYear - treeObject.properties.PFLANZJAHR;
 
-      let opacity = map(age, 0, 50, 30, 0);
+      let r = age * 1.3;
 
-      fill(0, 50);
+      fill(0);
+      noStroke();
       ellipse(x, y, 1, 1);
-      stroke(0, opacity);
+
+      stroke(0, 20);
       noFill();
-      // ellipse(x, y, r, r);
-      rectMode(CENTER);
-      push();
-      translate(x, y);
-      rotate(radians(45));
-      rect(0, 0, r, r);
-      pop();
+      ellipse(x, y, r, r);
     }
   }
 }
